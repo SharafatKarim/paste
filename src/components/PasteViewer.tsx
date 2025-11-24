@@ -4,6 +4,7 @@ import { Paste } from "@/lib/firestore-utils";
 import { Card, CardContent } from "@/components/ui/card";
 import { Calendar, Eye, FileCode } from "lucide-react";
 import ReactMarkdown from "react-markdown";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
     CodeBlock,
     CodeBlockBody,
@@ -38,10 +39,37 @@ export default function PasteViewer({ paste }: PasteViewerProps) {
     const codeData = [
         {
             language: paste.language,
-            filename: paste.slug, // Using slug as filename for now
+            filename: paste.slug,
             code: paste.content,
         },
     ];
+
+    const renderCodeBlock = () => (
+        <CodeBlock data={codeData} defaultValue={codeData[0].language}>
+            <CodeBlockHeader>
+                <CodeBlockFiles>
+                    {(item) => (
+                        <CodeBlockFilename key={item.language} value={item.language}>
+                            {item.filename}
+                        </CodeBlockFilename>
+                    )}
+                </CodeBlockFiles>
+                <div className="flex items-center gap-2">
+                    <span className="text-xs text-muted-foreground uppercase">{paste.language}</span>
+                    <CodeBlockCopyButton />
+                </div>
+            </CodeBlockHeader>
+            <CodeBlockBody>
+                {(item) => (
+                    <CodeBlockItem key={item.language} value={item.language}>
+                        <CodeBlockContent language={item.language as BundledLanguage}>
+                            {item.code}
+                        </CodeBlockContent>
+                    </CodeBlockItem>
+                )}
+            </CodeBlockBody>
+        </CodeBlock>
+    );
 
     return (
         <div className="w-full max-w-4xl mx-auto p-4 space-y-6">
@@ -67,34 +95,24 @@ export default function PasteViewer({ paste }: PasteViewerProps) {
             <Card className="overflow-hidden border-0 shadow-none bg-transparent">
                 <CardContent className="p-0">
                     {paste.language === "markdown" ? (
-                        <div className="p-6 prose dark:prose-invert max-w-none bg-card rounded-lg border">
-                            <ReactMarkdown>{paste.content}</ReactMarkdown>
-                        </div>
-                    ) : (
-                        <CodeBlock data={codeData} defaultValue={codeData[0].language}>
-                            <CodeBlockHeader>
-                                <CodeBlockFiles>
-                                    {(item) => (
-                                        <CodeBlockFilename key={item.language} value={item.language}>
-                                            {item.filename}
-                                        </CodeBlockFilename>
-                                    )}
-                                </CodeBlockFiles>
-                                <div className="flex items-center gap-2">
-                                    <span className="text-xs text-muted-foreground uppercase">{paste.language}</span>
-                                    <CodeBlockCopyButton />
+                        <Tabs defaultValue="preview" className="w-full">
+                            <div className="flex items-center justify-between mb-4">
+                                <TabsList>
+                                    <TabsTrigger value="preview">Preview</TabsTrigger>
+                                    <TabsTrigger value="source">Source</TabsTrigger>
+                                </TabsList>
+                            </div>
+                            <TabsContent value="preview" className="mt-0">
+                                <div className="p-6 prose dark:prose-invert max-w-none bg-card rounded-lg border min-h-[200px]">
+                                    <ReactMarkdown>{paste.content}</ReactMarkdown>
                                 </div>
-                            </CodeBlockHeader>
-                            <CodeBlockBody>
-                                {(item) => (
-                                    <CodeBlockItem key={item.language} value={item.language}>
-                                        <CodeBlockContent language={item.language as BundledLanguage}>
-                                            {item.code}
-                                        </CodeBlockContent>
-                                    </CodeBlockItem>
-                                )}
-                            </CodeBlockBody>
-                        </CodeBlock>
+                            </TabsContent>
+                            <TabsContent value="source" className="mt-0">
+                                {renderCodeBlock()}
+                            </TabsContent>
+                        </Tabs>
+                    ) : (
+                        renderCodeBlock()
                     )}
                 </CardContent>
             </Card>
